@@ -3468,7 +3468,7 @@ function LayoutComponent() {
         style={{ width: sidebarOpen ? '16rem' : '5rem' }}
       >
         <div className="h-full flex flex-col p-4">
-          <div className="flex items-center gap-3 mb-8 px-2">
+          <div className={`flex items-center gap-3 mb-8 ${sidebarOpen ? 'px-2' : 'justify-center px-2'}`}>
             <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center text-white shrink-0">
               <BookOpen size={20} />
             </div>
@@ -3491,7 +3491,7 @@ function LayoutComponent() {
                     isActive
                       ? 'bg-blue-500 text-white'
                       : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800'
-                  }`}
+                  } ${!sidebarOpen ? 'justify-center' : ''}`}
                 >
                   <Icon size={20} />
                   {sidebarOpen && <span className="font-medium">{item.label}</span>}
@@ -3503,14 +3503,14 @@ function LayoutComponent() {
           <div className="space-y-1 pt-4 border-t border-gray-200 dark:border-zinc-800">
             <button
               onClick={() => navigate('/upload')}
-              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-all"
+              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-all ${!sidebarOpen ? 'justify-center' : ''}`}
             >
               <UploadIcon size={20} />
               {sidebarOpen && <span className="font-medium">上传书籍</span>}
             </button>
             <button
               onClick={toggleTheme}
-              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-all"
+              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-all ${!sidebarOpen ? 'justify-center' : ''}`}
             >
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
               {sidebarOpen && (
@@ -3521,7 +3521,7 @@ function LayoutComponent() {
             </button>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all ${!sidebarOpen ? 'justify-center' : ''}`}
             >
               <LogOut size={20} />
               {sidebarOpen && <span className="font-medium">退出登录</span>}
