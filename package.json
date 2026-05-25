@@ -1,0 +1,17 @@
+{
+  "name": "bookhub",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "bun run --filter '*' dev",
+    "dev:frontend": "bun run --filter @bookhub/frontend dev",
+    "dev:backend": "bun run --filter @bookhub/backend dev",
+    "build": "bun run --filter @bookhub/frontend build",
+    "lint": "bun run --filter @bookhub/frontend lint"
+  }
+}
