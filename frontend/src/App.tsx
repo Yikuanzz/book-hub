@@ -9,6 +9,7 @@ import { useAIChatStore, getBookChatMessages } from './store/aiChatStore';
 import type { ChatMessage } from './store/aiChatStore';
 import { useBooksStore } from './store/booksStore';
 import type { LibraryBook } from './store/booksStore';
+import { useStore } from './store/useStore';
 import { EditBookModal } from './components/EditBookModal';
 import { Upload } from './pages/Upload';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -3360,6 +3361,12 @@ function LayoutComponent() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  // Initialize data from backend
+  const initStore = useStore((s) => s.init);
+  useEffect(() => {
+    initStore();
+  }, [initStore]);
+
   const navItems = [
     { path: '/', icon: Home, label: '首页' },
     { path: '/library', icon: Library, label: '书库' },
@@ -3475,6 +3482,16 @@ function LayoutComponent() {
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Initialize all backend-connected stores once on mount
+  const initBooks = useBooksStore((s) => s.init);
+  const initNotes = useNotesStore((s) => s.init);
+  const initSettings = useSettingsStore((s) => s.init);
+  useEffect(() => {
+    initBooks();
+    initNotes();
+    initSettings();
+  }, [initBooks, initNotes, initSettings]);
 
   const login = (password: string) => {
     if (password === '123456') {
