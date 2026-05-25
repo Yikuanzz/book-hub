@@ -222,24 +222,92 @@ function LoginPage() {
 function DashboardPage() {
   const navigate = useNavigate();
   const mockBooks = useBooksStore((s) => s.books);
-  // Memoize so heatmap & charts don't flicker on every re-render.
-  const history = useMemo(() => buildReadingHistory(365), []);
-  const last7 = history.slice(-7);
-  const last30 = history.slice(-30);
+  const [dashboardStats, setDashboardStats] = useState<any>(null);
+  const [heatmapRaw, setHeatmapRaw] = useState<any[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
-  const totalMinutes = history.reduce((s, d) => s + d.minutes, 0);
-  const totalHours = Math.round(totalMinutes / 60);
-  const activeDays = history.filter((d) => d.minutes > 0).length;
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const [dashRes, heatRes] = await Promise.all([
+          fetch('/api/stats/dashboard'),
+          fetch('/api/stats/heatmap?year=' + new Date().getFullYear()),
+        ]);
+        const dashJson = await dashRes.json();
+        const heatJson = await heatRes.json();
+        if (cancelled) return;
+        if (dashJson.success) setDashboardStats(dashJson.data);
+        if (heatJson.success) setHeatmapRaw(heatJson.data);
+      } catch (err) {
+        console.error('Failed to load stats:', err);
+      } finally {
+        if (!cancelled) setLoaded(true);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
 
-  // Current streak: walk backwards from today while minutes > 0.
-  let streak = 0;
-  for (let i = history.length - 1; i >= 0; i--) {
-    if (history[i].minutes > 0) streak++;
-    else break;
-  }
+  // Build full-year history from backend heatmap data (fallback to mock if no data)
+  const history = useMemo(() => {
+    if (!loaded || heatmapRaw.length === 0) {
+      return buildReadingHistory(365);
+    }
+    const minutesMap = new Map<string, number>();
+    heatmapRaw.forEach((d: any) => minutesMap.set(d.date, d.minutes));
 
-  const last7Total = last7.reduce((s, d) => s + d.minutes, 0);
-  const last7Avg = Math.round(last7Total / 7);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const out: { date: Date; iso: string; minutes: number }[] = [];
+    for (let i = 364; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      out.push({ date: new Date(d), iso, minutes: minutesMap.get(iso) || 0 });
+    }
+    return out;
+  }, [heatmapRaw, loaded]);
+
+  const last7 = useMemo(() => {
+    if (dashboardStats?.weeklyReading?.length === 7) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return dashboardStats.weeklyReading.map((minutes: number, i: number) => {
+        const d = new Date(today);
+        d.setDate(today.getDate() - (6 - i));
+        return { date: d, minutes };
+      });
+    }
+    return history.slice(-7);
+  }, [dashboardStats, history]);
+
+  const last30 = useMemo(() => history.slice(-30), [history]);
+
+  const totalHours = useMemo(() => {
+    if (dashboardStats?.totalReadingTime != null) {
+      return Math.round(dashboardStats.totalReadingTime / 60);
+    }
+    return Math.round(history.reduce((s, d) => s + d.minutes, 0) / 60);
+  }, [dashboardStats, history]);
+
+  const activeDays = useMemo(() => {
+    if (heatmapRaw.length > 0) {
+      return heatmapRaw.filter((d) => d.minutes > 0).length;
+    }
+    return history.filter((d) => d.minutes > 0).length;
+  }, [heatmapRaw, history]);
+
+  const streak = dashboardStats?.currentStreak ?? 0;
+
+  const last7Avg = useMemo(() => {
+    if (dashboardStats?.weeklyReading?.length === 7) {
+      const total = dashboardStats.weeklyReading.reduce((s: number, m: number) => s + m, 0);
+      return Math.round(total / 7);
+    }
+    const total = last7.reduce((s, d) => s + d.minutes, 0);
+    return Math.round(total / 7);
+  }, [dashboardStats, last7]);
 
   // Recent books: in-progress, sorted by lastReadAt (most recent first)
   const recentBooks = useMemo(
@@ -308,7 +376,7 @@ function DashboardPage() {
           <WeeklyTrend data={last7} />
         </div>
         <div className="lg:col-span-2">
-          <CategoryBreakdown />
+          <CategoryBreakdown data={dashboardStats?.categoryDistribution || []} />
         </div>
       </div>
 
@@ -631,8 +699,8 @@ function WeeklyTrend({ data }: { data: { date: Date; minutes: number }[] }) {
   );
 }
 
-function CategoryBreakdown() {
-  const cats = [
+function CategoryBreakdown({ data }: { data: { name: string; count: number; color: string }[] }) {
+  const cats = data.length > 0 ? data : [
     { name: '文学小说', count: 12, color: '#8B5CF6' },
     { name: '科技',     count: 8,  color: '#0EA5E9' },
     { name: '心理学',   count: 7,  color: '#10B981' },
@@ -640,7 +708,7 @@ function CategoryBreakdown() {
     { name: '哲学',     count: 5,  color: '#EF4444' },
     { name: '传记',     count: 4,  color: '#EC4899' },
   ];
-  const max = Math.max(...cats.map((c) => c.count));
+  const max = Math.max(1, ...cats.map((c) => c.count));
 
   return (
     <section
@@ -652,32 +720,36 @@ function CategoryBreakdown() {
       </h2>
       <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">按数量排序</p>
 
-      <ul className="space-y-3">
-        {cats.map((c) => {
-          const pct = (c.count / max) * 100;
-          return (
-            <li key={c.name}>
-              <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="text-gray-700 dark:text-gray-300">{c.name}</span>
-                <span className="text-gray-500 dark:text-gray-400 tabular-nums">{c.count} 本</span>
-              </div>
-              <div
-                className="h-2 rounded-full bg-gray-100 dark:bg-zinc-800 overflow-hidden"
-                role="progressbar"
-                aria-valuenow={c.count}
-                aria-valuemin={0}
-                aria-valuemax={max}
-                aria-label={`${c.name} 共 ${c.count} 本`}
-              >
+      {data.length === 0 ? (
+        <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">暂无分类数据</p>
+      ) : (
+        <ul className="space-y-3">
+          {cats.map((c) => {
+            const pct = (c.count / max) * 100;
+            return (
+              <li key={c.name}>
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  <span className="text-gray-700 dark:text-gray-300">{c.name}</span>
+                  <span className="text-gray-500 dark:text-gray-400 tabular-nums">{c.count} 本</span>
+                </div>
                 <div
-                  className="h-full rounded-full transition-all"
-                  style={{ width: `${pct}%`, backgroundColor: c.color }}
-                />
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+                  className="h-2 rounded-full bg-gray-100 dark:bg-zinc-800 overflow-hidden"
+                  role="progressbar"
+                  aria-valuenow={c.count}
+                  aria-valuemin={0}
+                  aria-valuemax={max}
+                  aria-label={`${c.name} 共 ${c.count} 本`}
+                >
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{ width: `${pct}%`, backgroundColor: c.color }}
+                  />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </section>
   );
 }
