@@ -1,4 +1,12 @@
-# BookHub - 个人电子书阅读管理
+<p align="center">
+  <img src="assets/logo.svg" alt="BookHub Logo" width="120" />
+</p>
+
+<h1 align="center">BookHub</h1>
+
+<p align="center">
+  <b>个人电子书阅读管理</b>
+</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React 19" />
