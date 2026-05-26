@@ -1,9 +1,9 @@
-import { Router } from 'express';
+import express from 'express';
 import { z } from 'zod';
 import { categoryRepo } from '../repositories/categoryRepo.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 const categorySchema = z.object({
   name: z.string().min(1),

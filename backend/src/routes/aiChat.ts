@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import express from 'express';
 import { z } from 'zod';
 import { aiChatRepo } from '../repositories/aiChatRepo.js';
 import { aiProxyService } from '../services/aiProxyService.js';
@@ -6,7 +6,7 @@ import { bookRepo } from '../repositories/bookRepo.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import type { ChatMessage } from '../types/index.js';
 
-const router = Router({ mergeParams: true });
+const router: express.Router = express.Router({ mergeParams: true });
 
 const messageSchema = z.object({
   content: z.string().min(1),

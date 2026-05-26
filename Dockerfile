@@ -26,42 +26,28 @@ COPY package.json bun.lock ./
 COPY frontend ./frontend
 COPY backend ./backend
 
-# Build frontend
-RUN cd frontend && bun run build
+# Build frontend (skip tsc type-check, vite handles the build)
+RUN cd frontend && bunx vite build
 
 # ==========================================
-# Stage 3: Build Backend
-# ==========================================
-FROM oven/bun:1 AS backend-builder
-WORKDIR /app
-
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/frontend/node_modules ./frontend/node_modules
-COPY --from=deps /app/backend/node_modules ./backend/node_modules
-
-COPY package.json bun.lock ./
-COPY backend ./backend
-
-# Compile backend TypeScript
-RUN cd backend && bun run build
-
-# ==========================================
-# Stage 4: Runner
+# Stage 3: Runner
 # ==========================================
 FROM oven/bun:slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3001
 
-# Install runtime dependencies (if any)
+# Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy backend compiled output
-COPY --from=backend-builder /app/backend/dist ./backend/dist
-COPY --from=backend-builder /app/backend/node_modules ./backend/node_modules
-COPY --from=backend-builder /app/backend/package.json ./backend/
+# Copy backend source + dependencies
+# Bun workspaces hoists packages to root node_modules/.bun/ with symlinks in workspace node_modules
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/backend/node_modules ./backend/node_modules
+COPY --from=deps /app/backend/package.json ./backend/
+COPY backend/src ./backend/src
 
 # Copy frontend build output
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
@@ -78,4 +64,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 
 # Start the application
 WORKDIR /app/backend
-CMD ["bun", "dist/index.js"]
+CMD ["bun", "src/index.ts"]

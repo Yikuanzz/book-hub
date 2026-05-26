@@ -1,10 +1,10 @@
-import { Router } from 'express';
+import express from 'express';
 import { z } from 'zod';
 import { bookmarkRepo } from '../repositories/bookmarkRepo.js';
 import { bookRepo } from '../repositories/bookRepo.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 
-const router = Router({ mergeParams: true });
+const router: express.Router = express.Router({ mergeParams: true });
 
 const bookmarkSchema = z.object({
   page: z.number().min(1),

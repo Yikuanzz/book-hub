@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import express from 'express';
 import { z } from 'zod';
 import multer from 'multer';
 import fs from 'fs';
@@ -61,7 +61,7 @@ const uploadCover = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-const router = Router();
+const router: express.Router = express.Router();
 
 const createBookSchema = z.object({
   title: z.string().min(1),

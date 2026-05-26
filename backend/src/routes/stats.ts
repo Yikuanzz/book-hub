@@ -1,8 +1,8 @@
-import { Router } from 'express';
+import express from 'express';
 import { statsService } from '../services/statsService.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 router.get('/dashboard', asyncHandler(async (_req, res) => {
   const stats = statsService.getDashboardStats();

@@ -1,10 +1,10 @@
-import { Router } from 'express';
+import express from 'express';
 import { z } from 'zod';
 import { highlightService } from '../services/highlightService.js';
 import { highlightRepo } from '../repositories/highlightRepo.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 const highlightSchema = z.object({
   bookId: z.number(),
