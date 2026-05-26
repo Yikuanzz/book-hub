@@ -18,6 +18,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import { useBooksStore } from '../store/booksStore';
 import { CoverCropper } from '../components/CoverCropper';
 
 const supportedFormats = ['epub', 'pdf', 'mobi', 'txt'];
@@ -73,6 +74,8 @@ function coverGradient(title: string): string {
 export function Upload() {
   const navigate = useNavigate();
   const addBook = useStore((state) => state.addBook);
+  const refreshStore = useStore((state) => state.refresh);
+  const refreshBooks = useBooksStore((state) => state.refresh);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -308,7 +311,7 @@ export function Upload() {
     setUploadProgress(100);
 
     const ext = selectedFile.name.split('.').pop()?.toLowerCase() as 'epub' | 'pdf' | 'mobi' | 'txt' || 'epub';
-    addBook({
+    const book = await addBook({
       title: title.trim(),
       author: author.trim(),
       cover: customCover || '',
@@ -318,6 +321,28 @@ export function Upload() {
       description: description.trim() || '暂无简介',
       tags: selectedTags,
     });
+
+    // Upload file to server
+    if (book?.id && selectedFile) {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      try {
+        const res = await fetch(`/api/books/${book.id}/upload`, {
+          method: 'POST',
+          body: formData,
+        });
+        if (!res.ok) {
+          const text = await res.text().catch(() => '');
+          console.error('File upload failed:', res.status, text);
+        }
+      } catch (err) {
+        console.error('File upload failed:', err);
+      }
+    }
+
+    // Refresh stores to get updated filePath
+    await refreshStore();
+    await refreshBooks();
 
     setIsUploading(false);
     setUploadSuccess(true);

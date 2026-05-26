@@ -134,8 +134,11 @@ router.delete('/:id', asyncHandler(async (req, res) => {
   if (!existing) throw new AppError(404, 'Book not found');
 
   const filePath = getBookFilePath(id);
-  if (filePath && fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
+  if (filePath) {
+    const absPath = path.join(booksUploadDir, path.basename(filePath));
+    if (fs.existsSync(absPath)) {
+      fs.unlinkSync(absPath);
+    }
   }
 
   const coverPath = path.join(coversUploadDir, `${id}.jpg`);
@@ -178,7 +181,9 @@ router.post(
     }
 
     const filePath = req.file.path;
-    const book = bookService.update(id, { filePath });
+    const ext = path.extname(req.file.originalname).toLowerCase().replace('.', '');
+    const format = ['pdf', 'epub', 'mobi', 'txt'].includes(ext) ? ext : null;
+    const book = bookService.update(id, { filePath, format });
     res.json({ success: true, data: book });
   })
 );

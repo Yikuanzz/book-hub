@@ -106,7 +106,7 @@ interface AppState {
 
   // Books
   books: Book[];
-  addBook: (book: Partial<Omit<Book, 'id' | 'uploadedAt'>> & Pick<Book, 'title' | 'author'>) => void;
+  addBook: (book: Partial<Omit<Book, 'id' | 'uploadedAt'>> & Pick<Book, 'title' | 'author'>) => Promise<Book>;
   updateReadingProgress: (bookId: string, page: number, readingTime?: number) => void;
   getBookById: (bookId: string) => Book | undefined;
   getRecentBooks: () => Book[];
@@ -182,6 +182,7 @@ export const useStore = create<AppState>((set, get) => ({
     const created = await apiPost<any>('/api/books', payload);
     const book = apiBookToFrontend(created);
     set((state) => ({ books: [book, ...state.books] }));
+    return book;
   },
   updateReadingProgress: async (bookId: string, page: number, readingTime: number = 0) => {
     const id = Number(bookId);

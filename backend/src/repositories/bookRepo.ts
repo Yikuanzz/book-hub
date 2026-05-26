@@ -1,4 +1,5 @@
 import { db } from '../db/connection.js';
+import path from 'path';
 import type { Book } from '../types/index.js';
 
 export interface BookCreateInput {
@@ -45,7 +46,9 @@ function mapBookRow(row: Record<string, unknown>): Book {
     totalPages: row.total_pages as number | null,
     currentPage: row.current_page as number,
     format: row.format as string | null,
-    filePath: row.file_path as string | null,
+    filePath: row.file_path
+      ? `/uploads/books/${path.basename(row.file_path as string)}`
+      : null,
     progress: row.progress as number,
     lastReadAt: row.last_read_at as number | null,
     totalReadingTime: row.total_reading_time as number,
