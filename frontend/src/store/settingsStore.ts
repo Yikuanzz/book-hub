@@ -64,6 +64,7 @@ interface SettingsState {
   activeAIProviderId: string | null;
   initialized: boolean;
   init: () => Promise<void>;
+  refresh: () => Promise<void>;
   addProvider: (p: Omit<AIProvider, 'id'>) => Promise<void>;
   updateProvider: (id: string, patch: Partial<Omit<AIProvider, 'id'>>) => Promise<void>;
   removeProvider: (id: string) => Promise<void>;
@@ -77,6 +78,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   init: async () => {
     if (get().initialized) return;
+    await get().refresh();
+  },
+
+  refresh: async () => {
     try {
       const providers = await apiGet<any[]>('/api/settings/ai-providers');
       const active = providers.find((p) => p.isActive || p.is_active);
@@ -86,7 +91,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         initialized: true,
       });
     } catch (err) {
-      console.error('Failed to load settings:', err);
+      console.error('Failed to refresh settings:', err);
       set({ initialized: true });
     }
   },

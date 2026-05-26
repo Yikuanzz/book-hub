@@ -19,13 +19,16 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // 初始化数据库
 initDatabase();
 settingsRepo.seedProviders();
 
 // 中间件
-app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:5174'] }));
+if (NODE_ENV === 'development') {
+  app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:5174'] }));
+}
 app.use(express.json());
 
 // 静态文件服务
@@ -45,13 +48,24 @@ app.get('/api/health', (_req, res) => {
   res.json({ success: true, data: { status: 'ok' } });
 });
 
+// 生产环境：serve 前端构建产物
+if (NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../../frontend/dist');
+  app.use(express.static(distPath));
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 // 错误处理
 app.use(errorHandler);
 
-// 404
-app.use((_req, res) => {
-  res.status(404).json({ success: false, error: 'Not Found' });
-});
+// 404 (仅开发环境，生产环境由前端路由处理)
+if (NODE_ENV === 'development') {
+  app.use((_req, res) => {
+    res.status(404).json({ success: false, error: 'Not Found' });
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`BookHub server running on http://localhost:${PORT}`);

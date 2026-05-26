@@ -106,7 +106,7 @@ interface AppState {
 
   // Books
   books: Book[];
-  addBook: (book: Omit<Book, 'id' | 'uploadedAt'>) => void;
+  addBook: (book: Partial<Omit<Book, 'id' | 'uploadedAt'>> & Pick<Book, 'title' | 'author'>) => void;
   updateReadingProgress: (bookId: string, page: number, readingTime?: number) => void;
   getBookById: (bookId: string) => Book | undefined;
   getRecentBooks: () => Book[];
@@ -134,6 +134,7 @@ interface AppState {
   // Init
   initialized: boolean;
   init: () => Promise<void>;
+  refresh: () => Promise<void>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -156,7 +157,19 @@ export const useStore = create<AppState>((set, get) => ({
   // Books
   books: [],
   addBook: async (bookData) => {
-    const payload = {
+    // Resolve category name to category id
+    let categoryId: number | null = null;
+    if (bookData.category) {
+      try {
+        const cats = await apiGet<any[]>('/api/categories');
+        const cat = cats.find((c) => c.name === bookData.category);
+        if (cat) categoryId = Number(cat.id);
+      } catch {
+        // ignore category resolution failure
+      }
+    }
+
+    const payload: Record<string, unknown> = {
       title: bookData.title,
       author: bookData.author,
       cover: bookData.cover || null,
@@ -164,6 +177,7 @@ export const useStore = create<AppState>((set, get) => ({
       tags: bookData.tags || [],
       totalPages: bookData.totalPages || null,
       format: bookData.format || null,
+      categoryId,
     };
     const created = await apiPost<any>('/api/books', payload);
     const book = apiBookToFrontend(created);
@@ -252,8 +266,11 @@ export const useStore = create<AppState>((set, get) => ({
   initialized: false,
   init: async () => {
     if (get().initialized) return;
+    await get().refresh();
+  },
+  refresh: async () => {
     try {
-      const [backendBooks, backendBookmarks, backendHighlights, backendCategories, stats] = await Promise.all([
+      const [backendBooks, _backendBookmarks, backendHighlights, backendCategories, stats] = await Promise.all([
         apiGet<any[]>('/api/books'),
         apiGet<any[]>('/api/highlights'),
         apiGet<any[]>('/api/highlights'),
@@ -284,7 +301,7 @@ export const useStore = create<AppState>((set, get) => ({
         initialized: true,
       });
     } catch (err) {
-      console.error('Failed to init store from backend:', err);
+      console.error('Failed to refresh store from backend:', err);
       set({ initialized: true });
     }
   },

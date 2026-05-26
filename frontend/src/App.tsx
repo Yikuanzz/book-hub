@@ -3559,11 +3559,29 @@ function App() {
   const initBooks = useBooksStore((s) => s.init);
   const initNotes = useNotesStore((s) => s.init);
   const initSettings = useSettingsStore((s) => s.init);
+  const refreshBooks = useBooksStore((s) => s.refresh);
+  const refreshNotes = useNotesStore((s) => s.refresh);
+  const refreshSettings = useSettingsStore((s) => s.refresh);
+  const refreshStore = useStore((s) => s.refresh);
   useEffect(() => {
     initBooks();
     initNotes();
     initSettings();
   }, [initBooks, initNotes, initSettings]);
+
+  // Refresh data when tab becomes visible again
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshBooks();
+        refreshNotes();
+        refreshSettings();
+        refreshStore();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [refreshBooks, refreshNotes, refreshSettings, refreshStore]);
 
   const login = (password: string) => {
     if (password === '123456') {

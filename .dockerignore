@@ -1,0 +1,58 @@
+# Dependencies
+node_modules
+*/node_modules
+
+# Build outputs
+*/dist
+frontend/dist
+backend/dist
+
+# Development
+.vite
+*.log
+logs
+*.local
+
+# Testing
+.coverage
+.nyc_output
+
+# Editor
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# GitHub
+.github
+
+# Docker
+Dockerfile*
+.dockerignore
+
+# Documentation (keep screenshots for README)
+docs
+.claude
+.playwright-mcp
+
+# Data (will be mounted as volume)
+backend/data/*.db
+backend/data/*.db-*
+backend/uploads/*
+
+# Screenshots (development only)
+screenshots
+*.png
+
+# Lock files (we copy the root one)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

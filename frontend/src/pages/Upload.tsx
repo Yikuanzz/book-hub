@@ -311,14 +311,12 @@ export function Upload() {
     addBook({
       title: title.trim(),
       author: author.trim(),
-      description: description.trim() || '暂无简介',
       cover: customCover || '',
       category,
-      tags: selectedTags,
       totalPages: 300,
-      currentPage: 0,
       format: ext,
-      totalReadingTime: 0,
+      description: description.trim() || '暂无简介',
+      tags: selectedTags,
     });
 
     setIsUploading(false);

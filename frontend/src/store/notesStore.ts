@@ -81,6 +81,7 @@ interface NotesState {
   highlights: ReaderHighlight[];
   initialized: boolean;
   init: () => Promise<void>;
+  refresh: () => Promise<void>;
   add: (h: Omit<ReaderHighlight, 'id' | 'createdAt' | 'updatedAt'>) => Promise<string>;
   update: (id: string, patch: Partial<Omit<ReaderHighlight, 'id' | 'createdAt'>>) => Promise<void>;
   remove: (id: string) => Promise<ReaderHighlight | undefined>;
@@ -93,11 +94,15 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 
   init: async () => {
     if (get().initialized) return;
+    await get().refresh();
+  },
+
+  refresh: async () => {
     try {
       const data = await apiGet<any[]>('/api/highlights');
       set({ highlights: data.map((h) => apiHighlightToFrontend(h)), initialized: true });
     } catch (err) {
-      console.error('Failed to load highlights:', err);
+      console.error('Failed to refresh highlights:', err);
       set({ initialized: true });
     }
   },

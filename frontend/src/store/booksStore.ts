@@ -69,7 +69,8 @@ interface BooksState {
   books: LibraryBook[];
   initialized: boolean;
   init: () => Promise<void>;
-  addBook: (book: Omit<LibraryBook, 'id'>) => Promise<void>;
+  refresh: () => Promise<void>;
+  addBook: (book: Omit<LibraryBook, 'id'> & { description?: string; tags?: string[] }) => Promise<void>;
   updateBook: (id: string, patch: Partial<Omit<LibraryBook, 'id'>>) => Promise<void>;
   deleteBook: (id: string) => Promise<void>;
 }
@@ -80,23 +81,39 @@ export const useBooksStore = create<BooksState>((set, get) => ({
 
   init: async () => {
     if (get().initialized) return;
+    await get().refresh();
+  },
+
+  refresh: async () => {
     try {
       const data = await apiGet<any[]>('/api/books');
       set({ books: data.map(apiBookToFrontend), initialized: true });
     } catch (err) {
-      console.error('Failed to load books:', err);
+      console.error('Failed to refresh books:', err);
       set({ initialized: true });
     }
   },
 
   addBook: async (bookData) => {
+    // Resolve category name to category id
+    let categoryId: number | null = null;
+    if (bookData.category) {
+      try {
+        const cats = await apiGet<any[]>('/api/categories');
+        const cat = cats.find((c) => c.name === bookData.category);
+        if (cat) categoryId = Number(cat.id);
+      } catch {
+        // ignore category resolution failure
+      }
+    }
+
     const created = await apiPost<any>('/api/books', {
       title: bookData.title,
       author: bookData.author,
       cover: bookData.cover || null,
-      categoryId: null,
-      description: null,
-      tags: [],
+      categoryId,
+      description: (bookData as any).description || null,
+      tags: (bookData as any).tags || [],
       totalPages: bookData.totalPages || null,
       format: bookData.format || null,
       filePath: bookData.file || null,
