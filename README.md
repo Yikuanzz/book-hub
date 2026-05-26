@@ -29,6 +29,22 @@
 
 ---
 
+## 界面预览
+
+| 首页仪表盘 | 书库管理 |
+|:---:|:---:|
+| ![首页仪表盘](assets/screenshots/dashboard.png) | ![书库管理](assets/screenshots/library.png) |
+
+| 书籍上传 | 阅读器 |
+|:---:|:---:|
+| ![书籍上传](assets/screenshots/upload.png) | ![阅读器](assets/screenshots/reader.png) |
+
+| 笔记高亮 | 设置中心 |
+|:---:|:---:|
+| ![笔记高亮](assets/screenshots/notes.png) | ![设置中心](assets/screenshots/settings.png) |
+
+---
+
 ## 技术架构
 
 ```
